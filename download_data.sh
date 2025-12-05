@@ -19,7 +19,7 @@ for i in $(seq -w 1 109); do
         continue
     fi
 
-    # Check if the subject exists
+
     CHECK_URL="$BASE_URL/$SUBJECT/${SUBJECT}R01.edf"
     echo "🔎 Checking $SUBJECT on Physionet..."
 
