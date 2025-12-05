@@ -19,7 +19,11 @@ It processes data from the **EEG Motor Movement/Imagery Dataset** (PhysioNet) an
 
 📘 Educational BCI project: **you'll implement CSP from scratch and train classification models**.
 
+| Electrodes (channels) | Average accuracy of 6 experiments |
+|:---:|:---:|
+| <img src="https://github.com/user-attachments/assets/0a277a69-61a0-4477-b507-8d2eef960d21"  width="500"> | <img src="https://github.com/user-attachments/assets/f2294f05-e9b6-4f62-9d3c-d4e58a44cade" width="500"> |
 
+</div>
 
 ---
 
