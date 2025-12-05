@@ -6,6 +6,7 @@ from mycsp import MyCSP
 from processor import EEGTraitement
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import Pipeline
 
 
 class LogReg:
@@ -42,7 +43,7 @@ class LogReg:
             - None
         """
         run_type = self.ft_identify_run_type(run)
-        if run_type is None:
+        if run_type == "unknown":
             print(f"Run {run} not found")
             sys.exit(1)
 
@@ -67,22 +68,24 @@ class LogReg:
             id_event=[1, 2], tmin=-0.5, tmax=4.0)
 
         csp = MyCSP(epochs=epochs)
-        cov_t1, cov_t2 = csp.ft_compute_covariance_matrices()
-        eigvals_sorted, eigvecs_sorted = csp.ft_eigenvalue_problem_covariance(
-            cov_t1, cov_t2)
-        W = csp.ft_compute_W_matrix(eigvals_sorted, eigvecs_sorted)
-        features = csp.ft_obtain_csp_signals(W, csp.X)
+        X_raw = csp.X
         labels = csp.ft_return_Y_labels()
 
-        model = LogisticRegression(max_iter=10000)
+        model = Pipeline([
+            ('csp', MyCSP(n_components=6)),
+            ('logreg', LogisticRegression(max_iter=10000))
+        ])
 
         min_class_samples = np.min(np.unique(labels, return_counts=True)[1])
-        n_folds = min(10, min_class_samples)
-        scores = cross_val_score(model, features, labels, cv=n_folds)
+        n_folds = max(2, min(10, min_class_samples))
+        scores = cross_val_score(
+            model, X_raw, labels, cv=n_folds, scoring='accuracy')
         if print_mode:
             print(np.round(scores, 4))
             print(f"cross_val_score: {scores.mean():.4f}")
-        model.fit(features, labels)
+        model.fit(X_raw, labels)
+
+        W = model.named_steps['csp'].W
         return W, model
 
     def ft_predict_model(
@@ -102,7 +105,7 @@ class LogReg:
             - y_pred: Prediction accuracy (float) or None in stream mode
         """
         run_type = self.ft_identify_run_type(run)
-        if run_type is None:
+        if run_type == "unknown":
             print(f"Run {run} not found")
             sys.exit(1)
 
@@ -165,9 +168,8 @@ class LogReg:
             Return:
             - None
         """
-        model: LogisticRegression = None
-        W: np.ndarray = None
-        W, model = self.ft_load_model(f"./models/{type_run}.pkl")
+
+        _, model = self.ft_load_model(f"./models/{type_run}.pkl")
 
         processor = EEGTraitement(subject_id=subject_id, run=run)
         epochs = processor.ft_create_epochs(
@@ -176,12 +178,10 @@ class LogReg:
         X = epochs.get_data()
         y = epochs.events[:, 2]
 
-        csp = MyCSP(epochs=epochs)
-
         for i, epoch in enumerate(X):
             t0 = time.time()
-            features = csp.ft_obtain_csp_signals(W, epoch[None, ...])
-            pred = model.predict(features)[0]
+            # epoch[None, ...] -> shape (1, n_channels, n_times)
+            pred = model.predict(epoch[None, ...])[0]
             dt = time.time() - t0
             print(f"chunk {i:02d}: pred={pred}, truth={y[i]}, time={dt:.6f}s")
 
@@ -205,8 +205,6 @@ class LogReg:
             Return:
             - accuracy (float): The model accuracy on the test data
         """
-        model: LogisticRegression = None
-        W: np.ndarray = None
         W, model = self.ft_load_model(f"./models/{type_run}.pkl")
 
         processor = EEGTraitement(subject_id=subject_id, run=run)
@@ -215,8 +213,8 @@ class LogReg:
 
         original_labels = epochs.events[:, 2]
         X_test = epochs.get_data()
-        features = MyCSP(epochs=epochs).ft_obtain_csp_signals(W, X_test)
-        y_pred = model.predict(features)
+
+        y_pred = model.predict(X_test)
 
         if print_mode == "full":
             return self.ft_accuracy_calculation(original_labels, y_pred, True)
@@ -229,7 +227,7 @@ class LogReg:
     def ft_save_model(
             self,
             W: np.ndarray,
-            model: LogisticRegression,
+            model,
             type_run: str,
             print_mode: bool):
         """
@@ -267,7 +265,8 @@ class LogReg:
             - Handles file not found or corruption errors with helpful messages
             Return:
             - W (np.ndarray): CSP transformation matrix
-            - model (LogisticRegression): Trained classifier
+            - model: Trained classifier (Pipeline with CSP and
+              LogisticRegression)
         """
         try:
             with open(path, "rb") as f:
@@ -285,11 +284,10 @@ class LogReg:
 
 
 def main():
-
     pipeline = LogReg()
-    pipeline.ft_train_model(1, 6)
-    y_pred = pipeline.ft_predict_model(1, 13)
-    print(y_pred)
+    pipeline.ft_train_model(1, 6, True)
+    acc = pipeline.ft_predict_model(1, 13, "summary")
+    print(acc)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,4 @@
 import sys
-import random
 import argparse
 from logreg import LogReg
 
@@ -58,7 +57,7 @@ class MyBCI:
 
             for subject_id in SUBJECT_IDS:
 
-                train_run = random.choice(experiment)
+                train_run = experiment[0]
                 self.logreg.ft_train_model(subject_id, train_run, False)
 
                 accuracies = []
@@ -129,6 +128,7 @@ class MyBCI:
                 self.args.subject_id, self.args.run, 'full', True)
 
     args: argparse.Namespace
+    logreg: LogReg
 
 
 def main():

@@ -1,30 +1,38 @@
 import mne
 import scipy
 import numpy as np
+from typing import Optional
 from processor import EEGTraitement
 import matplotlib.pyplot as plt
+from sklearn.base import BaseEstimator, TransformerMixin
 plt.style.use('./vortex.mplstyle')
 
 
-class MyCSP:
+class MyCSP(BaseEstimator, TransformerMixin):
     """
         Class for implementing Common Spatial Patterns (CSP) algorithm.
         Computes CSP transformation matrix and extracts discriminative features
         from EEG epochs for motor imagery classification.
     """
 
-    def __init__(self, epochs: mne.Epochs):
+    def __init__(self, epochs=None, n_components: int = 6):
         """
             Logic:
-            - Stores the MNE epochs object
-            - Extracts the EEG data matrix X (n_epochs, n_channels, n_times)
-            - Extracts the event labels Y from the epochs events
+            - Initializes CSP transformer for use in Pipeline
+            - Stores epochs if provided (for backward compatibility)
+            - Sets number of CSP components
             Return:
             - None
         """
         self.epochs = epochs
-        self.X = self.epochs.get_data()
-        self.Y = self.epochs.events[:, -1]
+        self.n_components = n_components
+        self.W = None
+        if epochs is not None:
+            self.X = self.epochs.get_data()
+            self.Y = self.epochs.events[:, -1]
+        else:
+            self.X = None
+            self.Y = None
 
     # ************ Equation 3 page 4 ****************** #
 
@@ -135,17 +143,17 @@ class MyCSP:
             eigvecs_sorted: np.ndarray):
         """
             Logic:
-            - Selects the k=3 smallest and k=3 largest eigenvectors
+            - Selects k=n_components//2 smallest and k largest eigenvectors
               (most discriminative)
             - Transposes and stacks them to create the CSP transformation
               matrix W
-            - W has shape (2*k, n_channels) = (6, n_channels)
+            - W has shape (2*k, n_channels) = (n_components, n_channels)
             - This matrix projects EEG signals onto CSP space
             Return:
             - W (np.ndarray): CSP transformation matrix with shape
-              (6, n_channels)
+              (n_components, n_channels)
         """
-        k = 3
+        k = getattr(self, 'n_components', 6) // 2
         eigvecs_sorted = eigvecs_sorted.real
         W_small = eigvecs_sorted[:, :k].T
         W_large = eigvecs_sorted[:, -k:].T
@@ -184,6 +192,45 @@ class MyCSP:
             - Y (np.ndarray): Array of event labels for each epoch
         """
         return self.Y
+
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        """
+            Logic:
+            - Stores X and y in self.X and self.Y
+            - Reuses ft_compute_covariance_matrices() to compute covariance
+            - Reuses ft_eigenvalue_problem_covariance() to solve eigenvalue
+              problem
+            - Reuses ft_compute_W_matrix() to compute CSP transformation
+              matrix W
+            Return:
+            - self
+        """
+        self.X = X
+        self.Y = y
+
+        cov_t1, cov_t2 = self.ft_compute_covariance_matrices()
+        eigvals_sorted, eigvecs_sorted = self.ft_eigenvalue_problem_covariance(
+            cov_t1, cov_t2)
+        self.W = self.ft_compute_W_matrix(eigvals_sorted, eigvecs_sorted)
+
+        return self
+
+    def transform(self, X: np.ndarray):
+        """
+            Logic:
+            - Reuses ft_obtain_csp_signals() to transform epochs to CSP
+              features
+            - Projects each epoch onto CSP space and computes log-variance
+            Return:
+            - features (np.ndarray): CSP feature matrix
+        """
+        return self.ft_obtain_csp_signals(self.W, X)
+
+    n_components: int
+    W: Optional[np.ndarray]
+    X: Optional[np.ndarray]
+    Y: Optional[np.ndarray]
+    epochs: Optional[mne.Epochs]
 
 
 def main():
