@@ -139,11 +139,10 @@ class LogReg:
                 correct += 1
             if print_mode:
                 print(
-                    f"epoch {
-                        i:02d}:         [{
-                        y_pred[i]:02d}]    [{
-                        original_labels[i]:02d}] {
-                        original_labels[i] == y_pred[i]}")
+                    f"epoch {i:02d}: "
+                    f"[pred {y_pred[i]:02d}] "
+                    f"[truth {original_labels[i]:02d}] "
+                    f"{original_labels[i] == y_pred[i]}")
 
         accuracy_total = correct / total
         if print_mode:

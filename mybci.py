@@ -89,15 +89,14 @@ class MyBCI:
             "for all 109 subjects:")
         for exp_id, mean_exp in exp_mean_accuracies.items():
             print(
-                f"experiment {exp_id}:             accuracy = {
-                    mean_exp:.4f}")
+                f"experiment {exp_id}: "
+                f"accuracy = {mean_exp:.4f}")
 
         overall_mean = sum(exp_mean_accuracies.values()) / \
             len(exp_mean_accuracies)
         print(
-            f"Mean accuracy of {
-                len(experiments)} experiments: {
-                overall_mean:.4f}")
+            f"Mean accuracy of {len(experiments)} "
+            f"experiments: {overall_mean:.4f}")
 
     def ft_launch_training(self):
         """
