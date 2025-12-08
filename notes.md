@@ -487,3 +487,51 @@ Exp 2 → Train = 3 ; Test = 4,7,8,11,12
 Exp 3 → Train = 5 ; Test = 9,13
 Exp 4 → Train = 6 ; Test = 10,14
 Exp 5 → Train = 5 ; Test = 6,9,10,13,14
+
+
+Notes CSP — Soutenance MyCSP (42)
+
+## 1. Prétraitement
+- Band-pass (ex. 8–30 Hz) pour isoler les rythmes moteurs (µ / β) → ERD/ERS.
+- Découpage en epochs autour des événements (ex. −0.5s → 4s).
+→ **But : augmenter le rapport signal/bruit et capturer l’activité liée à T1/T2.**
+
+## 2. Covariances
+- Pour chaque classe : calcul d’une matrice de covariance normalisée.
+- Normalisation par la trace :
+Σ ← Σ / trace(Σ)
+→ **Covariance = information spatiale du cerveau + patterns propres à chaque tâche.**
+
+## 3. Problème aux valeurs propres (CSP)
+- Résolution : Σ₊ w = λ Σ₋ w
+- λ = ratio de variance entre classes après projection.
+- Grand λ → variance forte pour classe +
+- Petit λ → variance forte pour classe −
+→ **Les eigenvectors = directions spatiales optimales.**
+
+## 4. Sélection des filtres CSP
+- On trie les eigenvalues.
+- On prend k plus petits eigenvectors + k plus grands eigenvectors.
+→ Les valeurs du milieu ne sont pas discriminantes.
+→ Matrice : W ∈ ℝ^{2k × n_channels}
+
+## 5. Projection CSP
+- Pour chaque epoch : zᵢ = W Xᵢ
+- Dimensions : (2k filtres × n_samples)
+→ Chaque ligne = un filtre spatial qui maximise/minimise la variance selon la classe.
+
+## 6. Extraction des features
+- fᵢ[j] = log(Var(zᵢ[j]))
+→ **Variance = information discriminante.**
+→ **Log = stabilisation, compression, meilleure linéarité.**
+
+## 7. Classification
+- Features → LogisticRegression (ou LDA).
+→ **CSP + log(var) = séparation linéaire entre classes.**
+
+## Résumé court
+Je filtre le signal, j’extrais les epochs, je calcule les covariances par classe,
+puis je résous un problème généralisé d’eigenvalues pour obtenir les directions
+où la variance est maximale pour une classe et minimale pour l’autre.
+Je sélectionne les eigenvectors extrêmes, je projette les epochs, j’extrais le
+log-variance et j’entraîne un classifieur dessus.
