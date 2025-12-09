@@ -11,11 +11,9 @@ fi
 
 COMPONENTS=(
     scikit-learn
-    PyWavelets
     mne
     scipy
-    joblib
-    scipy
+    numpy
 )
 
 FILE="./nbr_pkg.txt"

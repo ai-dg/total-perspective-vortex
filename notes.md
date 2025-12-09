@@ -535,3 +535,492 @@ puis je résous un problème généralisé d’eigenvalues pour obtenir les dire
 où la variance est maximale pour une classe et minimale pour l’autre.
 Je sélectionne les eigenvectors extrêmes, je projette les epochs, j’extrais le
 log-variance et j’entraîne un classifieur dessus.
+
+
+
+
+# Common Spatial Patterns (CSP) – Eigenvalues & Eigenvectors  
+## Formules, explications et résolution mathématique
+
+Ce document décrit clairement les formules utilisées dans CSP pour la
+décomposition en valeurs propres (eigenvalues) et vecteurs propres (eigenvectors),
+dans le cadre du problème généralisé entre les matrices de covariance Σ⁺ et Σ⁻.
+
+---
+
+# 1. Matrices Σ⁺ et Σ⁻ (Covariances moyennes)
+
+À partir des epochs EEG filtrés :
+
+- Xi : epoch i (shape : channels × time)
+- Yi : label (classe + ou -)
+
+Pour chaque epoch, on calcule sa covariance spatiale :
+
+```
+Ci = Xi * Xiᵀ
+```
+
+Puis on normalise par la trace :
+
+```
+Ci_norm = Ci / trace(Ci)
+```
+
+On sépare les epochs par classe :
+
+```
+Σ⁺ = moyenne des Ci_norm pour la classe +
+Σ⁻ = moyenne des Ci_norm pour la classe -
+```
+
+Ces deux matrices résument la structure spatiale de chaque classe.
+
+---
+
+# 2. Problème généralisé d’autovaleurs (Generalized Eigenvalue Problem)
+
+Dans CSP, on résout :
+
+```
+Σ⁺ w = λ Σ⁻ w
+```
+
+Ce problème trouve des vecteurs w qui :
+
+- maximisent la variance pour Σ⁺ tout en la minimisant pour Σ⁻
+- ou l’inverse (pour les petits λ)
+
+Ce sont les directions spatiales discriminantes.
+
+---
+
+# 3. Passage à une forme standard
+
+Le problème généralisé équivaut à :
+
+```
+Σ⁻⁻¹ Σ⁺ w = λ w
+```
+
+Ce qui est une décomposition propre classique.
+
+---
+
+# 4. Décomposition en valeurs propres
+
+La décomposition d’une matrice A en valeurs propres consiste à trouver :
+
+```
+A v = λ v
+```
+
+Les vecteurs v sont invariants par la transformation A (changés seulement en échelle).
+
+En regroupant tous les eigenvectors :
+
+```
+A V = V Λ
+```
+
+avec :
+
+- V : matrice des eigenvectors (colonnes)
+- Λ : matrice diagonale des eigenvalues
+
+Si V est inversible :
+
+```
+A = V Λ V⁻¹
+```
+
+---
+
+# 5. Application au CSP
+
+On applique la décomposition généralisée :
+
+```
+eigvals, eigvecs = eig(Σ⁺, Σ⁻)
+```
+
+où :
+
+- eigvals : λ₁ … λₙ (shape : n,)
+- eigvecs : matrice V contenant les eigenvectors (shape : n × n)
+
+---
+
+# 6. Tri des eigenvectors
+
+Les eigenvalues sont triés par ordre décroissant :
+
+```
+λ₁ ≥ λ₂ ≥ ... ≥ λₙ
+```
+
+et on réorganise les eigenvectors en conséquence.
+
+Les eigenvectors associés aux :
+
+- plus grands λ → maximisent la variance pour la classe +
+- plus petits λ → maximisent la variance pour la classe –
+
+---
+
+# 7. Matrice de projection CSP (W)
+
+En pratique, on sélectionne les k vecteurs propres aux extrémités :
+
+```
+W = [v₁ ... v_k, v_(n−k+1) ... v_n]ᵀ
+```
+
+W est la matrice finale CSP utilisée pour projeter les signaux :
+
+```
+Z = W X
+```
+
+Z contient les canaux virtuels discriminants.
+
+---
+
+# 8. Résumé rapide (pour soutenance)
+
+- Σ⁺ et Σ⁻ = covariances moyennes par classe  
+- CSP résout : Σ⁺ w = λ Σ⁻ w  
+- λ = ratio de variance entre classes  
+- w = direction spatiale maximisant ou minimisant la variance  
+- On trie les eigenvalues et on garde les plus extrêmes  
+- W = matrice CSP  
+- Z = features CSP
+
+
+
+# Common Spatial Patterns (CSP) – Problème généralisé d’autovaleurs  
+## Formules avec notation $$ ... $$ (LaTeX compatible Markdown)
+
+Ce document présente les formules utilisées dans CSP pour résoudre le problème généralisé d’autovaleurs entre les matrices de covariance de deux classes, en utilisant la notation LaTeX avec `$$`.
+
+---
+
+# 1. Covariance spatiale normalisée
+
+Pour chaque epoch \(X_i \in \mathbb{R}^{C \times T}\) :
+
+$$
+C_i = X_i X_i^T
+$$
+
+Normalisation :
+
+$$
+\widetilde{C}_i = \frac{C_i}{\operatorname{trace}(C_i)}
+$$
+
+---
+
+# 2. Covariances moyennes des deux classes
+
+Soit :
+
+- \( \mathcal{I}_+ \) = indices des epochs de la classe +
+- \( \mathcal{I}_- \) = indices des epochs de la classe −
+
+Alors :
+
+$$
+\Sigma^{(+)} = \frac{1}{|\mathcal{I}_+|} \sum_{i \in \mathcal{I}_+} \widetilde{C}_i
+$$
+
+$$
+\Sigma^{(-)} = \frac{1}{|\mathcal{I}_-|} \sum_{i \in \mathcal{I}_-} \widetilde{C}_i
+$$
+
+---
+
+# 3. Problème généralisé d’autovaleurs du CSP
+
+Le CSP résout :
+
+$$
+\Sigma^{(+)} w = \lambda \, \Sigma^{(-)} w
+$$
+
+---
+
+# 4. Transformation en problème classique
+
+Si \( \Sigma^{(-)} \) est inversible :
+
+$$
+\Sigma^{(-)-1} \Sigma^{(+)} w = \lambda w
+$$
+
+On définit alors la matrice :
+
+$$
+M = \Sigma^{(-)-1} \Sigma^{(+)}
+$$
+
+et on résout :
+
+$$
+M w = \lambda w
+$$
+
+---
+
+# 5. Décomposition propre (Eigen decomposition)
+
+On peut écrire :
+
+$$
+M = V \Lambda V^{-1}
+$$
+
+où :
+
+- \( V = [w_1 \ w_2 \ \cdots \ w_C] \) est la matrice des eigenvectors
+- \( \Lambda = \mathrm{diag}(\lambda_1, \ldots, \lambda_C) \) est la matrice diagonale des eigenvalues
+
+Chaque colonne de \(V\) est un vecteur propre \(w_i\), associé à un eigenvalue \(\lambda_i\).
+
+---
+
+# 6. Calcul via SciPy
+
+En pratique, on utilise :
+
+```python
+eigvals, eigvecs = scipy.linalg.eig(S_plus, S_minus)
+```
+
+Ce qui résout numériquement :
+
+$$
+\Sigma^{(+)} w = \lambda \, \Sigma^{(-)} w
+$$
+
+---
+
+# 7. Sélection des filtres spatiaux CSP
+
+Les eigenvalues sont triées par ordre décroissant :
+
+$$
+\lambda_1 \ge \lambda_2 \ge \cdots \ge \lambda_C
+$$
+
+- les plus grands \(\lambda\) correspondent à des filtres où la variance est maximale pour la classe +
+- les plus petits \(\lambda\) correspondent à des filtres où la variance est maximale pour la classe −
+
+On construit la matrice CSP en sélectionnant les eigenvectors extrêmes :
+
+$$
+W =
+\begin{bmatrix}
+w_1^T \\
+w_2^T \\
+\vdots \\
+w_k^T \\
+w_{C-k+1}^T \\
+\vdots \\
+w_C^T
+\end{bmatrix}
+$$
+
+---
+
+# 8. Projection finale des données
+
+Pour un epoch \( X \in \mathbb{R}^{C \times T} \), la projection CSP est :
+
+$$
+Z = W X
+$$
+
+Les lignes de \(Z\) sont les composantes CSP (canaux virtuels discriminants) qui serviront de features pour la classification.
+
+---
+
+# 9. Résumé compact
+
+$$
+\begin{aligned}
+&\widetilde{C}_i = \frac{X_i X_i^T}{\operatorname{trace}(X_i X_i^T)} \\\\
+&\Sigma^{(+)} = \frac{1}{N_+} \sum \widetilde{C}_i,
+\quad
+\Sigma^{(-)} = \frac{1}{N_-} \sum \widetilde{C}_i \\\\
+&\Sigma^{(+)} w = \lambda \Sigma^{(-)} w \\\\
+&M = \Sigma^{(-)-1} \Sigma^{(+)} \\\\
+&M = V \Lambda V^{-1} \\\\
+&W = \text{matrice formée des eigenvectors extrêmes} \\\\
+&Z = W X
+\end{aligned}
+$$
+
+
+
+# CSP – Résolution mathématique de `scipy.linalg.eig(A, B)`
+## Comment SciPy calcule les eigenvalues et eigenvectors du problème généralisé
+
+Ce document décrit **exactement** comment SciPy résout le problème généralisé d’autovaleurs :
+
+$$
+A w = \lambda B w
+$$
+
+où \(A\) et \(B\) sont les matrices de covariance moyennes des deux classes (64×64 dans CSP).
+
+---
+
+# 1. Problème généralisé d’autovaleurs
+
+Le CSP demande de résoudre :
+
+$$
+A w = \lambda B w
+$$
+
+où :
+
+- \(A = \Sigma^{(+)}\) = covariance moyenne de la classe +  
+- \(B = \Sigma^{(-)}\) = covariance moyenne de la classe −  
+- \(w\) = vecteur propre (eigenvector)  
+- \(\lambda\) = valeur propre (eigenvalue), ratio de variance entre classes
+
+---
+
+# 2. Décomposition de Cholesky de \(B\)
+
+Comme \(B\) est symétrique définie positive, SciPy calcule :
+
+$$
+B = L L^T
+$$
+
+où \(L\) est triangulaire inférieure.
+
+Ce facteur servira à transformer le problème généralisé en un problème standard.
+
+---
+
+# 3. Transformation (« whitening ») pour éliminer \(B\)
+
+On pose :
+
+$$
+M = L^{-1} A L^{-T}
+$$
+
+et le changement de variable :
+
+$$
+w = L^{-T} u
+$$
+
+Substitution dans l’équation générale :
+
+\[
+A w = \lambda B w
+\]
+
+donne après simplification :
+
+$$
+M u = \lambda u
+$$
+
+On a converti le problème généralisé en un **problème classique d’autovaleurs**.
+
+---
+
+# 4. Décomposition propre standard
+
+SciPy diagonalise ensuite la matrice :
+
+$$
+M = V \Lambda V^{-1}
+$$
+
+Ce qui signifie que chaque colonne \(u_i\) de \(V\) vérifie :
+
+$$
+M u_i = \lambda_i u_i
+$$
+
+Les \(\lambda_i\) sont les eigenvalues du CSP.
+
+---
+
+# 5. Retour aux eigenvectors du problème généralisé
+
+SciPy reconstruit ensuite les eigenvectors originaux via :
+
+$$
+w_i = L^{-T} u_i
+$$
+
+Ainsi :
+
+$$
+A w_i = \lambda_i B w_i
+$$
+
+La matrice finale des eigenvectors fournie par SciPy est :
+
+$$
+W = L^{-T} V
+$$
+
+Chaque colonne de \(W\) est un filtre spatial CSP.
+
+---
+
+# 6. Résultat de `scipy.linalg.eig(A, B)`
+
+L'appel :
+
+```python
+eigvals, eigvecs = scipy.linalg.eig(A, B)
+```
+
+retourne directement :
+
+- `eigvals` = \( (\lambda_1, \ldots, \lambda_C) \)
+- `eigvecs` =  
+  $$ W = [w_1 \ w_2 \ \cdots \ w_C] $$
+
+tels que :
+
+$$
+A w_i = \lambda_i B w_i
+$$
+
+SciPy effectue **automatiquement** toutes les étapes :
+
+1. Cholesky de \(B\)  
+2. Construction de \(M = L^{-1} A L^{-T}\)  
+3. Résolution du problème standard \(Mu = \lambda u\)  
+4. Reconstruction \(w = L^{-T} u\)  
+
+---
+
+# 7. Résumé compact (pour soutenance)
+
+$$
+\begin{aligned}
+& A w = \lambda B w \\
+& B = L L^T \\
+& M = L^{-1} A L^{-T} \\
+& M u = \lambda u \\
+& w = L^{-T} u \\
+& W = [w_1 \ w_2 \ \cdots \ w_C]
+\end{aligned}
+$$
+
+---
+
+# Fichier prêt pour utilisation dans votre projet CSP.
