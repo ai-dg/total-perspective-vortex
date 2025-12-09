@@ -1,5 +1,6 @@
 # Total Perspective Vortex 🧠
 
+![Score](https://img.shields.io/badge/Score-96%25-brightgreen)
 **A Brain-Computer Interface (BCI) system for motor imagery classification using Common Spatial Patterns (CSP) and Logistic Regression**
 
 > Classify motor imagery tasks from EEG signals using CSP feature extraction and machine learning. Train models to distinguish between left/right hand movements and both hands/both feet movements.
