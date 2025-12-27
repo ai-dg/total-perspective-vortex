@@ -373,13 +373,13 @@ CSP is a spatial filtering technique that finds linear combinations of EEG chann
    - C⁻ = mean of normalized covariance matrices for class -
 
 2. **Generalized eigenvalue problem** (Equation 5):
-   - C⁺w = λC⁻w
+   - $C⁺w = λC⁻w$
    - Eigenvectors w represent spatial filters
    - Eigenvalues λ indicate discriminative power
 
 3. **Feature extraction**:
-   - Project signal: z = W @ X
-   - Compute log-variance: f = log(var(z))
+   - Project signal: $z = W @ X$
+   - Compute log-variance: $f = log(var(z))$
 
 ### Motor Imagery and EEG
 
