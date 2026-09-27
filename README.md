@@ -40,7 +40,7 @@ It processes data from the **EEG Motor Movement/Imagery Dataset** (PhysioNet) an
 
 ✔️ **Model Save/Load**: Export and import trained models using pickle\
 
-✔️ **Stream Mode**: Process epochs one by one with timing information\
+✔️ **Stream Mode**: Replay pre-computed epochs one by one with timing information (offline, not live acquisition)\
 
 ✔️ **Batch Experiments**: Run comprehensive experiments across all 109 subjects\
 
@@ -361,7 +361,7 @@ The one run logged in this README (subject 4, run 14) scores **0.53**, close to 
 
 ### ■ Model Performance
 
-The models achieve reasonable classification accuracy for motor imagery tasks, with performance varying by:
+Classification accuracy varies widely by subject and task type — the single run logged above sits near chance — and depends on:
 - **Task difficulty**: Real movements generally easier than imagined
 - **Subject**: Individual differences in EEG signal quality
 - **Data quality**: Number of valid epochs after filtering

@@ -28,7 +28,7 @@ for i in $(seq -w 1 109); do
         continue
     fi
 
-    echo "✔ $SUBJECT found. Downloading selected runs (imagery only)..."
+    echo "✔ $SUBJECT found. Downloading runs R03-R14 (motor execution and motor imagery)..."
 
     RUNS=("03" "04" "05" "06" "07" "08" "09" "10" "11" "12" "13" "14")
     mkdir -p "$LOCAL_PATH"
@@ -42,7 +42,7 @@ for i in $(seq -w 1 109); do
 
     echo "✔ Download complete for $SUBJECT."
     echo "📁 Saved in: $LOCAL_PATH"
-    echo "🧠 Runs downloaded: R04, R06, R08, R10, R12, R14 (imagery tasks)"
+    echo "🧠 Runs downloaded: R03-R14 (motor execution and motor imagery tasks)"
     echo "---------------------------------------------"
 done
 
