@@ -113,7 +113,7 @@ The classification pipeline uses **Common Spatial Patterns (CSP)** for feature e
 
 2. **Generalized Eigenvalue Problem**: Solve Σ⁺w = λΣ⁻w (Equation 5)
    - Find eigenvalues and eigenvectors
-   - Sort by eigenvalue magnitude
+   - Sort eigenvalues in ascending order
 
 3. **W Matrix Construction**: Select k=3 smallest and k=3 largest eigenvectors
    - These represent the most discriminative spatial filters
@@ -126,13 +126,13 @@ The classification pipeline uses **Common Spatial Patterns (CSP)** for feature e
 ### ■ Classification
 
 - **Model**: Logistic Regression with max_iter=10000
-- **Cross-Validation**: Adaptive k-fold (min(10, min_samples_per_class))
+- **Cross-Validation**: k-fold with k = max(2, min(10, smallest class count))
 - **Features**: 6-dimensional CSP feature vectors (from 2k filters)
 
 ### ■ Epoch Creation
 
 - **Time window**: tmin=-0.5s to tmax=4.0s around events
-- **Events**: T1 (class 1) and T2 (class 2) only
+- **Events**: T1 (label 2) and T2 (label 3) only
 - **Filtering**: 8-30 Hz bandpass filter applied before epoch creation
 
 ---
@@ -141,41 +141,43 @@ The classification pipeline uses **Common Spatial Patterns (CSP)** for feature e
 
 ### ■ Requirements
 
-- Python 3.x
+- Python 3.9+
 - `numpy` (numerical operations)
 - `scipy` (eigenvalue decomposition)
 - `mne` (EEG data processing)
 - `scikit-learn` (machine learning)
-- `matplotlib` (plotting, optional)
-- `pickle` (model serialization)
+- `matplotlib` and `PyQt5` (required: `processor.py` sets the Qt5Agg backend at import)
 
 ### ■ Installation
 
 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/ai-dg/total-perspective-vortex.git
 cd total-perspective-vortex
 ```
 
 2. Install dependencies
 
 ```bash
-pip install numpy scipy mne scikit-learn matplotlib
-or
-./dependencies.sh
+pip install numpy scipy mne scikit-learn matplotlib PyQt5
 ```
 
 3. Download the dataset
 
-The dataset should be placed in the `./data/` directory with the following structure:
+```bash
+./download_data.sh ./data           # runs 03–14 (.edf and .edf.event) for S001–S109
+./download_one_subject.sh S001 ./data   # a single subject
+```
+
+The data lands in `./data/` with the following structure:
 
 ```
 data/
 ├── S001/
-│   ├── S001R01.edf
-│   ├── S001R01.edf.event
-│   ├── S001R02.edf
+│   ├── S001R03.edf
+│   ├── S001R03.edf.event
+│   ├── S001R04.edf
 │   └── ...
 ├── S002/
 │   └── ...
@@ -221,7 +223,9 @@ python mybci.py 2 14 train
 python mybci.py 1 13 predict
 
 # The model will automatically load the appropriate model file
-# based on the run type (left_fist_right_fist or both_fists_both_feet)
+# based on the run type (left_fist_right_fist or both_fists_both_feet).
+# There is one model file per run type, so predicting on a subject uses
+# the model of whichever subject was trained last for that run type.
 ```
 
 #### 3. Stream mode (epoch by epoch)
@@ -238,10 +242,9 @@ python mybci.py 1 4 stream
 python mybci.py
 
 # This will:
-# - Train models on random runs from each experiment
-# - Test on remaining runs
-# - Compute mean accuracy per experiment
-# - Display overall statistics
+# - Train on the first run of each experiment for every subject (overwrites models/*.pkl)
+# - Test on the other runs of that experiment
+# - Print per-subject accuracy, the mean per experiment and the overall mean
 ```
 
 ---
@@ -296,6 +299,10 @@ total-perspective-vortex/
 ├── logreg.py             # Logistic Regression training and prediction
 ├── mycsp.py              # CSP algorithm implementation
 ├── processor.py          # EEG data loading and preprocessing
+├── csp-example.py        # MNE CSP reference example
+├── download_data.sh      # PhysioNet download, all subjects
+├── download_one_subject.sh  # PhysioNet download, one subject
+├── BlaTomLemKawMue08.pdf # CSP paper (equations 3 and 5)
 ├── models/               # Pre-trained models
 │   ├── left_fist_right_fist.pkl
 │   └── both_fists_both_feet.pkl
@@ -338,7 +345,7 @@ For motor imagery classification, the most important electrodes are:
 - Comprehensive docstrings with Logic/Return format
 - Modular design with clear separation of concerns
 - Error handling for file operations
-- Flake8 compliant (79 character line limit)
+- Flake8 clean on the four main modules (79 character line limit)
 
 ---
 
@@ -346,7 +353,7 @@ For motor imagery classification, the most important electrodes are:
 
 ### ■ Cross-Validation Scores
 
-Typical cross-validation scores range from **0.4 to 0.6** depending on:
+The one run logged in this README (subject 4, run 14) scores **0.53**, close to chance for two classes. Scores vary with:
 - Subject variability
 - Run type (real vs imagined movements)
 - Number of epochs available
@@ -392,7 +399,7 @@ CSP is a spatial filtering technique that finds linear combinations of EEG chann
 ## ▌References
 
 - **Dataset**: [EEG Motor Movement/Imagery Dataset](https://physionet.org/content/eegmmidb/1.0.0/)
-- **CSP Algorithm**: Blankertz et al., "The Berlin Brain-Computer Interface: Non-Medical Uses of BCI Technology"
+- **CSP Algorithm**: Blankertz, Tomioka, Lemm, Kawanabe and Müller, "Optimizing Spatial Filters for Robust EEG Single-Trial Analysis", IEEE Signal Processing Magazine, 2008 (`BlaTomLemKawMue08.pdf`)
 - **MNE-Python**: [Documentation](https://mne.tools/stable/index.html)
 
 ---
