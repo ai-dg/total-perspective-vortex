@@ -2,18 +2,21 @@
 
 set -e
 
-echo "Learn2Slither - Snake with Reinforcement Learning"
+echo "Total Perspective Vortex - EEG motor imagery classification"
 
 if ! command -v python3 &> /dev/null; then
     echo "Python3 not found. Please install it."
     exit 1
 fi
 
+# pip package:python module
 COMPONENTS=(
-    scikit-learn
-    mne
-    scipy
-    numpy
+    scikit-learn:sklearn
+    mne:mne
+    scipy:scipy
+    numpy:numpy
+    matplotlib:matplotlib
+    PyQt5:PyQt5
 )
 
 FILE="./nbr_pkg.txt"
@@ -28,11 +31,13 @@ fi
 if [ "${NUMBER_OF_PKG:-0}" -ne "$required_count" ]; then
     number_of_pkg=0
     for component in "${COMPONENTS[@]}"; do
-        if ! python3 -c "import $component" &> /dev/null; then
-            echo "Installing $component..."
-            python3 -m pip install "$component" >/dev/null
+        package="${component%%:*}"
+        module="${component##*:}"
+        if ! python3 -c "import $module" &> /dev/null; then
+            echo "Installing $package..."
+            python3 -m pip install "$package" >/dev/null
         else
-            echo "$component already installed"
+            echo "$package already installed"
         fi
         ((++number_of_pkg))
     done
@@ -41,9 +46,3 @@ if [ "${NUMBER_OF_PKG:-0}" -ne "$required_count" ]; then
 else
     echo "All Python packages already verified ($NUMBER_OF_PKG total). Skipping check."
 fi
-
-# exec python3 ./snake.py "$@"
-
-
-
-

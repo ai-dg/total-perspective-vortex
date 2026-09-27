@@ -161,6 +161,7 @@ cd total-perspective-vortex
 
 ```bash
 pip install numpy scipy mne scikit-learn matplotlib PyQt5
+# or: ./dependencies.sh
 ```
 
 3. Download the dataset
